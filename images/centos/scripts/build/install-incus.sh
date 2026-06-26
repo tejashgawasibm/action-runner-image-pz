@@ -336,7 +336,7 @@ else
         fi
         
         # Try preseed initialization
-        if cat "$CONFIG_FILE" | /usr/local/bin/incus admin init --preseed 2>/dev/null; then
+        if /usr/local/bin/incus admin init --preseed < "$CONFIG_FILE" 2>/dev/null; then
             echo "[INFO] Preseed initialization successful"
         else
             echo "[WARN] Preseed initialization failed. Falling back to manual configuration..."
