@@ -317,8 +317,8 @@ echo "[INFO] Initializing Incus..."
 # Check if storage pool exists
 STORAGE_EXISTS=$(/usr/local/bin/incus storage list --format csv 2>/dev/null | grep -q "^default," && echo "true" || echo "false")
 
-# Check if network exists
-NETWORK_EXISTS=$(/usr/local/bin/incus network list --format csv 2>/dev/null | grep -q "^incusbr0," && echo "true" || echo "false")
+# Check if network exists AND is properly configured (managed=YES)
+NETWORK_EXISTS=$(/usr/local/bin/incus network list --format csv 2>/dev/null | grep "^incusbr0," | grep -q ",YES," && echo "true" || echo "false")
 
 if [ "$STORAGE_EXISTS" = "true" ] && [ "$NETWORK_EXISTS" = "true" ]; then
     echo "[INFO] Incus already initialized (storage and network exist)"
