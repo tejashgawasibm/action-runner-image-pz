@@ -46,7 +46,7 @@ echo "=================================================="
 # --------------------------------------------------
 
 echo "[INFO] Installing dependencies..."
-dnf install -y \
+install_dnfpkgs \
     git \
     gcc \
     gcc-c++ \
@@ -367,7 +367,7 @@ else
             /usr/local/bin/incus storage create default lvm \
                 source=vg_incus \
                 lvm.thinpool_name=IncusThinPool \
-                size=180GiB \
+                size=100GiB \
                 volume.size=60GiB \
                 --description="Incus LVM storage pool for $ARCH"
         fi

@@ -48,7 +48,7 @@ echo "=================================================="
 echo "[INFO] Installing dependencies..."
 apt-get update
 
-DEBIAN_FRONTEND=noninteractive apt-get install -y \
+install_dpkgs \
     git \
     gcc \
     g++ \
@@ -363,7 +363,7 @@ else
             /usr/local/bin/incus storage create default lvm \
                 source=vg_incus \
                 lvm.thinpool_name=IncusThinPool \
-                size=180GiB \
+                size=100GiB \
                 volume.size=60GiB \
                 --description="Incus LVM storage pool for $ARCH"
         fi
