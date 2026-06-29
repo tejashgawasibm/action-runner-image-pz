@@ -46,7 +46,7 @@ echo "=================================================="
 # --------------------------------------------------
 
 echo "[INFO] Installing dependencies..."
-apt-get update
+update_dpkgs
 
 install_dpkgs \
     git \
