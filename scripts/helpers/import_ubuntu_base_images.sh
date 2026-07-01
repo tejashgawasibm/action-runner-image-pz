@@ -39,20 +39,26 @@ import_ubuntu_base_images() {
                 1)
                     echo ""
                     echo "Importing Ubuntu 22.04..."
-                    bash "${HELPERS_DIR}/import-canonical-ubuntu-image.sh" "22.04" "${ARCH}"
+                    # shellcheck disable=SC1090
+                    source "${HELPERS_DIR}/import-canonical-ubuntu-image.sh"
+                    import_canonical_ubuntu_image "22.04" "${ARCH}"
                     ;;
                 2)
                     echo ""
                     echo "Importing Ubuntu 24.04..."
-                    bash "${HELPERS_DIR}/import-canonical-ubuntu-image.sh" "24.04" "${ARCH}"
+                    # shellcheck disable=SC1090
+                    source "${HELPERS_DIR}/import-canonical-ubuntu-image.sh"
+                    import_canonical_ubuntu_image "24.04" "${ARCH}"
                     ;;
                 3)
                     echo ""
                     echo "Importing Ubuntu 22.04..."
-                    bash "${HELPERS_DIR}/import-canonical-ubuntu-image.sh" "22.04" "${ARCH}"
+                    # shellcheck disable=SC1090
+                    source "${HELPERS_DIR}/import-canonical-ubuntu-image.sh"
+                    import_canonical_ubuntu_image "22.04" "${ARCH}"
                     echo ""
                     echo "Importing Ubuntu 24.04..."
-                    bash "${HELPERS_DIR}/import-canonical-ubuntu-image.sh" "24.04" "${ARCH}"
+                    import_canonical_ubuntu_image "24.04" "${ARCH}"
                     ;;
                 *)
                     echo "Invalid choice. Skipping import."
@@ -74,20 +80,26 @@ import_ubuntu_base_images() {
                 1)
                     echo ""
                     echo "Building Ubuntu 22.04..."
-                    bash "${HELPERS_DIR}/build-distrobuilder-image.sh" "22.04" "${ARCH}"
+                    # shellcheck disable=SC1090
+                    source "${HELPERS_DIR}/build-distrobuilder-image.sh"
+                    build_distrobuilder_image "22.04" "${ARCH}"
                     ;;
                 2)
                     echo ""
                     echo "Building Ubuntu 24.04..."
-                    bash "${HELPERS_DIR}/build-distrobuilder-image.sh" "24.04" "${ARCH}"
+                    # shellcheck disable=SC1090
+                    source "${HELPERS_DIR}/build-distrobuilder-image.sh"
+                    build_distrobuilder_image "24.04" "${ARCH}"
                     ;;
                 3)
                     echo ""
                     echo "Building Ubuntu 22.04..."
-                    bash "${HELPERS_DIR}/build-distrobuilder-image.sh" "22.04" "${ARCH}"
+                    # shellcheck disable=SC1090
+                    source "${HELPERS_DIR}/build-distrobuilder-image.sh"
+                    build_distrobuilder_image "22.04" "${ARCH}"
                     echo ""
                     echo "Building Ubuntu 24.04..."
-                    bash "${HELPERS_DIR}/build-distrobuilder-image.sh" "24.04" "${ARCH}"
+                    build_distrobuilder_image "24.04" "${ARCH}"
                     ;;
                 *)
                     echo "Invalid choice. Skipping build."
