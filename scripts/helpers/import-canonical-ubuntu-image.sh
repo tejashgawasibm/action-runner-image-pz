@@ -111,6 +111,10 @@ import_canonical_ubuntu_image() {
         incus image delete "$IMAGE_ALIAS" || true
     fi
     
+    # Save original directory to restore later
+    local ORIGINAL_DIR
+    ORIGINAL_DIR="$(pwd)"
+    
     # Create working directory
     mkdir -p "$WORKDIR"
     cd "$WORKDIR"
@@ -140,6 +144,7 @@ import_canonical_ubuntu_image() {
     if ! wget -q --show-progress "$METADATA_URL"; then
         log_error "Failed to download metadata file"
         cleanup_files
+        cd "$ORIGINAL_DIR" 2>/dev/null || true
         return 1
     fi
     log_success "Metadata downloaded"
@@ -149,6 +154,7 @@ import_canonical_ubuntu_image() {
     if ! wget -q --show-progress "$ROOTFS_URL"; then
         log_error "Failed to download rootfs file"
         cleanup_files
+        cd "$ORIGINAL_DIR" 2>/dev/null || true
         return 1
     fi
     log_success "Rootfs downloaded"
@@ -158,6 +164,7 @@ import_canonical_ubuntu_image() {
     if ! incus image import "$METADATA_FILE" "$ROOTFS_FILE" --alias "$IMAGE_ALIAS"; then
         log_error "Failed to import image into Incus"
         cleanup_files
+        cd "$ORIGINAL_DIR" 2>/dev/null || true
         return 1
     fi
     log_success "Image imported successfully"
@@ -173,12 +180,16 @@ import_canonical_ubuntu_image() {
     else
         log_error "Image verification failed"
         cleanup_files
+        cd "$ORIGINAL_DIR" 2>/dev/null || true
         return 1
     fi
     
     # Cleanup downloaded files
     log_info "Cleaning up downloaded files..."
     cleanup_files
+    
+    # Restore original directory
+    cd "$ORIGINAL_DIR" 2>/dev/null || true
     
     log_success "=========================================="
     log_success "Import completed successfully!"
