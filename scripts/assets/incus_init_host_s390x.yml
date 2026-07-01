@@ -3,8 +3,12 @@ networks:
 - config:
     ipv4.address: auto
     ipv4.nat: "true"
+    ipv4.dhcp: "true"
     ipv6.address: auto
     ipv6.nat: "true"
+    ipv6.dhcp: "true"
+    dns.mode: managed
+    dns.domain: incus
   description: Default Incus bridge for s390x
   name: incusbr0
   type: bridge
