@@ -191,13 +191,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     if ! command -v incus &>/dev/null; then
         log_error "Incus is not installed or not in PATH"
         log_error "Checked PATH: $PATH"
-        exit 1
+        return 1
     fi
     
     # Check if incus daemon is running
     if ! incus admin waitready --timeout=5 >/dev/null 2>&1; then
         log_error "Incus daemon is not running or not ready"
-        exit 1
+        return 1
     fi
     
     # Parse arguments
@@ -206,7 +206,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         echo "  version: 22.04 or 24.04"
         echo "  arch: ppc64le, s390x, or x86_64 (default: auto-detect)"
         echo "  workdir: Working directory (default: ~/ubuntu-images)"
-        exit 1
+        return 1
     fi
     
     import_canonical_ubuntu_image "$@"
