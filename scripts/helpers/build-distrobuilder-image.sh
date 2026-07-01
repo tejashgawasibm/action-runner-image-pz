@@ -332,9 +332,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         exit 1
     fi
     
+    # Ensure /usr/local/bin is in PATH (where Incus is installed)
+    export PATH="/usr/local/bin:$PATH"
+    
     # Check if incus is available
     if ! command -v incus &>/dev/null; then
         log_error "Incus is not installed or not in PATH"
+        log_error "Checked PATH: $PATH"
         exit 1
     fi
     
