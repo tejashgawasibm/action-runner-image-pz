@@ -128,9 +128,9 @@ import_canonical_ubuntu_image() {
     cleanup_files() {
         log_info "Cleaning up downloaded files..."
         if [[ -n "${WORKDIR:-}" ]] && [[ -d "$WORKDIR" ]]; then
-            cd "$WORKDIR" 2>/dev/null || true
-            rm -f "ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}-lxd.tar.xz" \
-                  "ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}.squashfs" 2>/dev/null || true
+            # Use full paths instead of cd to avoid changing parent shell's directory
+            rm -f "${WORKDIR}/ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}-lxd.tar.xz" \
+                  "${WORKDIR}/ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}.squashfs" 2>/dev/null || true
         fi
         log_success "Cleanup completed"
     }

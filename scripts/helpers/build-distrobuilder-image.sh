@@ -247,15 +247,20 @@ build_distrobuilder_ubuntu_image() {
     # Create working directory
     log_info "Creating workspace: ${WORKDIR}"
     mkdir -p "$WORKDIR"
+    # Save original directory to restore later
+    local ORIGINAL_DIR
+    ORIGINAL_DIR="$(pwd)"
+    
     cd "$WORKDIR"
     
     # Cleanup function
     cleanup_files() {
         log_info "Cleaning up build artifacts..."
-        cd /
         if [[ -d "$WORKDIR" ]]; then
             rm -rf "${WORKDIR:?}"/*
         fi
+        # Restore original directory to avoid affecting parent shell
+        cd "$ORIGINAL_DIR" 2>/dev/null || cd / 2>/dev/null || true
         log_success "Cleanup completed"
     }
     
