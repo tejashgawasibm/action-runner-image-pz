@@ -123,12 +123,14 @@ import_canonical_ubuntu_image() {
     local METADATA_URL="${BASE_URL}/${METADATA_FILE}"
     local ROOTFS_URL="${BASE_URL}/${ROOTFS_FILE}"
     
-    # Cleanup function
+    # Cleanup function (uses variables from parent scope)
     cleanup_files() {
         log_info "Cleaning up downloaded files..."
-        cd "$WORKDIR" 2>/dev/null || true
-        rm -f "ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}-lxd.tar.xz" \
-              "ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}.squashfs" 2>/dev/null || true
+        if [[ -n "${WORKDIR:-}" ]] && [[ -d "$WORKDIR" ]]; then
+            cd "$WORKDIR" 2>/dev/null || true
+            rm -f "ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}-lxd.tar.xz" \
+                  "ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}.squashfs" 2>/dev/null || true
+        fi
         log_success "Cleanup completed"
     }
     
