@@ -42,10 +42,6 @@ ensure_incus() {
     fi
 }
 
-# Source the shared Ubuntu base image import function
-# shellcheck disable=SC1091
-source "${HELPERS_DIR}"/import_ubuntu_base_images.sh
-
 # shellcheck disable=SC2329
 # shellcheck disable=SC2317
 cleanup_builder() {
@@ -333,7 +329,6 @@ build_image() {
 
 run() {
   ensure_incus "$@"
-  import_ubuntu_base_images "$@"
   build_image "$@"
   return $?
 }

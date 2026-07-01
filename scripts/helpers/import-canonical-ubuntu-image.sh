@@ -126,7 +126,9 @@ import_canonical_ubuntu_image() {
     # Cleanup function
     cleanup_files() {
         log_info "Cleaning up downloaded files..."
-        rm -f "$METADATA_FILE" "$ROOTFS_FILE"
+        cd "$WORKDIR" 2>/dev/null || true
+        rm -f "ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}-lxd.tar.xz" \
+              "ubuntu-${VERSION}-server-cloudimg-${CANONICAL_ARCH}.squashfs" 2>/dev/null || true
         log_success "Cleanup completed"
     }
     
