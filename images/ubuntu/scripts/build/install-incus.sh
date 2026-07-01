@@ -396,24 +396,9 @@ echo "=================================================="
 echo " Incus installation completed successfully"
 echo "=================================================="
 
-# --------------------------------------------------
-# Import Ubuntu Base Images
-# --------------------------------------------------
-
 echo ""
-echo "[INFO] Incus is ready. Now importing Ubuntu base images..."
-echo ""
-
-# Source the shared import function
-HELPERS_DIR="${REPO_ROOT}/scripts/helpers"
-# shellcheck disable=SC1091
-source "${HELPERS_DIR}/import_ubuntu_base_images.sh"
-
-# Call the import function
-import_ubuntu_base_images
-
-echo ""
-echo "[INFO] Ubuntu base image import completed"
+echo "[INFO] Incus installation and configuration completed"
+echo "[INFO] Base image import will be handled by the calling script"
 echo ""
 
 # Made with Bob
