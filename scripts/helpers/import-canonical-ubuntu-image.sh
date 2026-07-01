@@ -7,7 +7,8 @@
 ##         arch: ppc64le, s390x, or x86_64 (default: auto-detect)
 ################################################################################
 
-set -euo pipefail
+# Note: Do NOT use 'set -e' in sourced scripts as it affects the parent shell
+# Instead, use explicit error checking with || return 1
 
 # Color codes for output
 RED='\033[0;31m'
@@ -134,13 +135,11 @@ import_canonical_ubuntu_image() {
         log_success "Cleanup completed"
     }
     
-    # Set trap for cleanup on exit
-    trap cleanup_files EXIT
-    
     # Download metadata file
     log_info "Downloading metadata: ${METADATA_FILE}..."
     if ! wget -q --show-progress "$METADATA_URL"; then
         log_error "Failed to download metadata file"
+        cleanup_files
         return 1
     fi
     log_success "Metadata downloaded"
@@ -149,6 +148,7 @@ import_canonical_ubuntu_image() {
     log_info "Downloading rootfs: ${ROOTFS_FILE}..."
     if ! wget -q --show-progress "$ROOTFS_URL"; then
         log_error "Failed to download rootfs file"
+        cleanup_files
         return 1
     fi
     log_success "Rootfs downloaded"
@@ -157,6 +157,7 @@ import_canonical_ubuntu_image() {
     log_info "Importing image into Incus with alias '${IMAGE_ALIAS}'..."
     if ! incus image import "$METADATA_FILE" "$ROOTFS_FILE" --alias "$IMAGE_ALIAS"; then
         log_error "Failed to import image into Incus"
+        cleanup_files
         return 1
     fi
     log_success "Image imported successfully"
@@ -171,8 +172,13 @@ import_canonical_ubuntu_image() {
         incus image info "$IMAGE_ALIAS" | head -n 10
     else
         log_error "Image verification failed"
+        cleanup_files
         return 1
     fi
+    
+    # Cleanup downloaded files
+    log_info "Cleaning up downloaded files..."
+    cleanup_files
     
     log_success "=========================================="
     log_success "Import completed successfully!"

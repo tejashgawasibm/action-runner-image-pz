@@ -7,7 +7,8 @@
 ##         arch: ppc64le, s390x, or x86_64 (default: auto-detect)
 ################################################################################
 
-set -euo pipefail
+# Note: Do NOT use 'set -e' in sourced scripts as it affects the parent shell
+# Instead, use explicit error checking with || return 1
 
 # Color codes for output
 RED='\033[0;31m'
@@ -258,14 +259,12 @@ build_distrobuilder_ubuntu_image() {
         log_success "Cleanup completed"
     }
     
-    # Set trap for cleanup on exit
-    trap cleanup_files EXIT
-    
     # Download image definition
     local YAML_URL="https://raw.githubusercontent.com/lxc/lxc-ci/main/images/ubuntu.yaml"
     log_info "Downloading Ubuntu image definition..."
     if ! wget -q -O ubuntu.yaml "$YAML_URL"; then
         log_error "Failed to download ubuntu.yaml"
+        cleanup_files
         return 1
     fi
     log_success "Image definition downloaded"
@@ -281,6 +280,7 @@ build_distrobuilder_ubuntu_image() {
         -o source.url=http://ports.ubuntu.com/ubuntu-ports 2>&1 | tee build.log; then
         log_error "Failed to build image with distrobuilder"
         log_error "Check build.log for details"
+        cleanup_files
         return 1
     fi
     
@@ -289,6 +289,7 @@ build_distrobuilder_ubuntu_image() {
     # Check for generated artifacts
     if [[ ! -f "incus.tar.xz" ]] || [[ ! -f "rootfs.squashfs" ]]; then
         log_error "Build artifacts not found (incus.tar.xz or rootfs.squashfs)"
+        cleanup_files
         return 1
     fi
     
@@ -299,6 +300,7 @@ build_distrobuilder_ubuntu_image() {
     log_info "Importing image into Incus with alias '${IMAGE_ALIAS}'..."
     if ! incus image import incus.tar.xz rootfs.squashfs --alias "$IMAGE_ALIAS"; then
         log_error "Failed to import image into Incus"
+        cleanup_files
         return 1
     fi
     log_success "Image imported successfully"
@@ -313,8 +315,13 @@ build_distrobuilder_ubuntu_image() {
         incus image info "$IMAGE_ALIAS" | head -n 10
     else
         log_error "Image verification failed"
+        cleanup_files
         return 1
     fi
+    
+    # Cleanup build directory
+    log_info "Cleaning up build directory..."
+    cleanup_files
     
     log_success "=========================================="
     log_success "Build completed successfully!"
