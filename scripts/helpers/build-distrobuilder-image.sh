@@ -379,6 +379,21 @@ build_distrobuilder_ubuntu_image() {
         return 1
     fi
     log_success "ubuntu.yaml patches applied successfully"
+
+    # Apply investigation patch if present (jammy-grub-investigation branch only)
+    local investigation_patch="${REPO_ROOT}/patches/jammy-grub-investigation.patch"
+    if [[ -f "$investigation_patch" ]]; then
+        log_warn "Applying investigation patch: ${investigation_patch}"
+        if ! patch -p1 < "$investigation_patch"; then
+            log_error "Failed to apply investigation patch."
+            mv images/ubuntu.yaml ubuntu.yaml 2>/dev/null || true
+            rmdir images 2>/dev/null || true
+            cleanup_files
+            return 1
+        fi
+        log_warn "Investigation patch applied — build will collect diagnostics and fail intentionally"
+    fi
+
     mv images/ubuntu.yaml ubuntu.yaml
     rmdir images 2>/dev/null || true
     
