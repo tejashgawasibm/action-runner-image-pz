@@ -380,18 +380,94 @@ build_distrobuilder_ubuntu_image() {
     fi
     log_success "ubuntu.yaml patches applied successfully"
 
-    # Apply investigation patch if present (jammy-grub-investigation branch only)
-    local investigation_patch="${REPO_ROOT}/patches/jammy-grub-investigation.patch"
-    if [[ -f "$investigation_patch" ]]; then
-        log_warn "Applying investigation patch: ${investigation_patch}"
-        if ! patch -p1 < "$investigation_patch"; then
-            log_error "Failed to apply investigation patch."
-            mv images/ubuntu.yaml ubuntu.yaml 2>/dev/null || true
-            rmdir images 2>/dev/null || true
+    # Inject investigation block if sentinel file exists (jammy-grub-investigation branch only).
+    # Uses Python to append a new post-files action directly into the already-patched yaml,
+    # avoiding patch line-offset conflicts from chained patches.
+    local investigation_sentinel="${REPO_ROOT}/patches/jammy-grub-investigation.patch"
+    if [[ -f "$investigation_sentinel" ]]; then
+        log_warn "Injecting GRUB investigation block into ubuntu.yaml (jammy only)"
+        python3 - "ubuntu.yaml" <<'PYEOF'
+import sys, textwrap
+
+path = sys.argv[1]
+with open(path) as f:
+    content = f.read()
+
+block = textwrap.dedent("""
+- trigger: post-files
+  action: |-
+    #!/bin/sh
+    set -eu
+    LOOP_DEV="${DISTROBUILDER_LOOP_DEVICE}"
+    if [ -z "${LOOP_DEV}" ]; then exit 0; fi
+    . /etc/os-release
+    if [ "${VERSION_CODENAME}" != "jammy" ]; then exit 0; fi
+    mkdir -p /boot/grub
+    echo "(hd0) ${LOOP_DEV}" > /boot/grub/device.map
+    echo "========== GRUB PACKAGE INFO =========="
+    grub-install --version 2>&1 || true
+    grub-probe --version 2>&1 || true
+    dpkg -l | grep -E '^ii.*(grub|e2fs)' || true
+    echo "========== FILESYSTEM =========="
+    findmnt 2>&1 || true
+    lsblk -o NAME,FSTYPE,LABEL,UUID,MOUNTPOINT 2>&1 || true
+    blkid "${LOOP_DEV}p2" 2>&1 || true
+    df -Th 2>&1 || true
+    findmnt / 2>&1 || true
+    findmnt /boot 2>&1 || true
+    echo "========== EXT4 FEATURES =========="
+    dumpe2fs -h "${LOOP_DEV}p2" 2>&1 | grep "Filesystem features" || true
+    tune2fs -l "${LOOP_DEV}p2" 2>&1 | grep "Filesystem features" || true
+    echo "========== PARTITION TABLE =========="
+    fdisk -l "${LOOP_DEV}" 2>&1 || true
+    echo "========== DEVICE MAP =========="
+    cat /boot/grub/device.map 2>&1 || true
+    echo "========== GRUB PROBE =========="
+    grub-probe --target=device /boot/grub 2>&1 || true
+    grub-probe --target=fs /boot/grub 2>&1 || true
+    grub-probe --target=partmap /boot/grub 2>&1 || true
+    grub-probe --target=abstraction /boot/grub 2>&1 || true
+    grub-probe --verbose --target=fs /boot/grub 2>&1 || true
+    echo "========== GRUB MODULES =========="
+    GRUB_DIR=$(grub-install --print-directory 2>/dev/null || echo /usr/lib/grub/powerpc-ieee1275)
+    echo "Module dir: ${GRUB_DIR}"
+    ls "${GRUB_DIR}/ext2.mod" "${GRUB_DIR}/part_gpt.mod" "${GRUB_DIR}/probe.mod" 2>&1 || true
+    echo "========== SYSTEM =========="
+    uname -a
+    cat /etc/os-release
+    echo "========== GRUB-INSTALL VERBOSE =========="
+    GRUB_RC=0
+    grub-install --target=powerpc-ieee1275 --skip-fs-probe --no-nvram --verbose "${LOOP_DEV}p1" 2>&1 || GRUB_RC=$?
+    echo "========== AFTER FAILURE (rc=${GRUB_RC}) =========="
+    grub-probe --target=device /boot/grub 2>&1 || true
+    grub-probe --target=fs /boot/grub 2>&1 || true
+    echo "========== END INVESTIGATION =========="
+    exit ${GRUB_RC}
+  architectures:
+  - ppc64el
+  types:
+  - vm
+""").lstrip("\n")
+
+# Append before the final 'types:\n- vm' that closes the file
+marker = "\n  types:\n  - vm\n"
+idx = content.rfind(marker)
+if idx == -1:
+    print("ERROR: could not find insertion point in ubuntu.yaml", file=sys.stderr)
+    sys.exit(1)
+
+insert_at = idx + len(marker)
+content = content[:insert_at] + "\n" + block + content[insert_at:]
+with open(path, "w") as f:
+    f.write(content)
+print("Investigation block injected successfully.")
+PYEOF
+        if [[ $? -ne 0 ]]; then
+            log_error "Failed to inject investigation block."
             cleanup_files
             return 1
         fi
-        log_warn "Investigation patch applied — build will collect diagnostics and fail intentionally"
+        log_warn "Investigation block injected — build will collect diagnostics then fail at grub-install"
     fi
 
     mv images/ubuntu.yaml ubuntu.yaml
