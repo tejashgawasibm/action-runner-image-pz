@@ -68,12 +68,7 @@ diff --git a/images/ubuntu.yaml b/images/ubuntu.yaml
 +    cat /etc/os-release
 +
 +    echo "========== GRUB-INSTALL VERBOSE =========="
-+    grub-install \
-+      --target=powerpc-ieee1275 \
-+      --skip-fs-probe \
-+      --no-nvram \
-+      --verbose \
-+      "${LOOP_DEV}p1" 2>&1 || GRUB_RC=$?
++    grub-install --target=powerpc-ieee1275 --skip-fs-probe --no-nvram --verbose "${LOOP_DEV}p1" 2>&1 || GRUB_RC=$?
 +
 +    echo "========== AFTER FAILURE (rc=${GRUB_RC:-0}) =========="
 +    grub-probe --target=device /boot/grub 2>&1 || true
