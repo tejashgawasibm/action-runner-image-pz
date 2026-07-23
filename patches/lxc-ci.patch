@@ -146,6 +146,6 @@ index 81be31e..1429e76 100644
 +    zipl -V -c /etc/zipl.conf
 +  architectures:
 +  - s390x
-  types:
-  - vm
-
+   types:
+   - vm
+ 
