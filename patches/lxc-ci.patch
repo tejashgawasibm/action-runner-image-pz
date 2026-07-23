@@ -36,10 +36,10 @@ index 81be31e..1429e76 100644
    - packages:
      - shim-signed
      action: install
-@@ -648,6 +666,72 @@ actions:
+@@ -648,6 +666,113 @@ actions:
 
-     update-grub
-     sed -i "s#root=[^ ]*#root=${DISTROBUILDER_ROOT_UUID}#g" /boot/grub/grub.cfg
+    update-grub
+    sed -i "s#root=[^ ]*#root=${DISTROBUILDER_ROOT_UUID}#g" /boot/grub/grub.cfg
 +  architectures:
 +  - amd64
 +  - arm64
@@ -49,28 +49,68 @@ index 81be31e..1429e76 100644
 +- trigger: post-files
 +  action: |-
 +    #!/bin/sh
-+    set -eux
++    set -eu
 +
-+    # Install GRUB for PowerPC IEEE1275 (used by SLOF on pseries)
 +    LOOP_DEV="${DISTROBUILDER_LOOP_DEVICE}"
-+    if [ -n "${LOOP_DEV}" ]; then
-+      # Create /dev/nvram if missing (chroot may not have it)
-+      test -c /dev/nvram || mknod /dev/nvram c 10 144 2>/dev/null || true
-+      # Create device.map so GRUB can find the loop device in the chroot
-+      mkdir -p /boot/grub
-+      echo "(hd0) ${LOOP_DEV}" > /boot/grub/device.map
-+      # Try partition device first (Fedora GRUB needs this), fall back to whole disk
-+      touch /dev/nvram 2>/dev/null || true
-+      # --skip-fs-probe (-s) prevents grub-install from probing the host's
-+      # /boot filesystem (e.g. /dev/md127 RAID) through the chroot mount,
-+      # which causes 'unknown filesystem'. The PReP partition (GPT type 4100)
-+      # needs no filesystem — grub writes its core image directly to raw space.
-+      if ! grub-install --target=powerpc-ieee1275 --skip-fs-probe "${LOOP_DEV}p1"; then
-+        grub-install --target=powerpc-ieee1275 --skip-fs-probe --no-nvram "${LOOP_DEV}p1"
-+      fi
-+    fi
-+    grub-mkconfig -o /boot/grub/grub.cfg
-+    sed -i "s#root=[^ ]*#root=${DISTROBUILDER_ROOT_UUID}#g" /boot/grub/grub.cfg
++    if [ -z "${LOOP_DEV}" ]; then exit 0; fi
++
++    # Investigation block: jammy (22.04) only — all probes run, then
++    # grub-install is attempted and the build fails naturally.
++    . /etc/os-release
++    if [ "${VERSION_CODENAME}" != "jammy" ]; then exit 0; fi
++
++    mkdir -p /boot/grub
++    echo "(hd0) ${LOOP_DEV}" > /boot/grub/device.map
++
++    echo "========== GRUB PACKAGE INFO =========="
++    grub-install --version 2>&1 || true
++    grub-probe --version 2>&1 || true
++    dpkg -l | grep -E '^ii.*(grub|e2fs)' || true
++
++    echo "========== FILESYSTEM =========="
++    findmnt 2>&1 || true
++    lsblk -o NAME,FSTYPE,LABEL,UUID,MOUNTPOINT 2>&1 || true
++    blkid "${LOOP_DEV}p2" 2>&1 || true
++    df -Th 2>&1 || true
++    findmnt / 2>&1 || true
++    findmnt /boot 2>&1 || true
++
++    echo "========== EXT4 FEATURES =========="
++    dumpe2fs -h "${LOOP_DEV}p2" 2>&1 | grep "Filesystem features" || true
++    tune2fs -l "${LOOP_DEV}p2" 2>&1 | grep "Filesystem features" || true
++
++    echo "========== PARTITION TABLE =========="
++    fdisk -l "${LOOP_DEV}" 2>&1 || true
++
++    echo "========== DEVICE MAP =========="
++    cat /boot/grub/device.map 2>&1 || true
++
++    echo "========== GRUB PROBE =========="
++    grub-probe --target=device /boot/grub 2>&1 || true
++    grub-probe --target=fs /boot/grub 2>&1 || true
++    grub-probe --target=partmap /boot/grub 2>&1 || true
++    grub-probe --target=abstraction /boot/grub 2>&1 || true
++    grub-probe --verbose --target=fs /boot/grub 2>&1 || true
++
++    echo "========== GRUB MODULES =========="
++    GRUB_DIR=$(grub-install --print-directory 2>/dev/null || echo /usr/lib/grub/powerpc-ieee1275)
++    echo "Module dir: ${GRUB_DIR}"
++    ls "${GRUB_DIR}/ext2.mod" "${GRUB_DIR}/part_gpt.mod" "${GRUB_DIR}/probe.mod" 2>&1 || true
++
++    echo "========== SYSTEM =========="
++    uname -a
++    cat /etc/os-release
++
++    echo "========== GRUB-INSTALL VERBOSE =========="
++    GRUB_RC=0
++    grub-install --target=powerpc-ieee1275 --skip-fs-probe --no-nvram --verbose "${LOOP_DEV}p1" 2>&1 || GRUB_RC=$?
++
++    echo "========== AFTER FAILURE (rc=${GRUB_RC}) =========="
++    grub-probe --target=device /boot/grub 2>&1 || true
++    grub-probe --target=fs /boot/grub 2>&1 || true
++
++    echo "========== END INVESTIGATION =========="
++    exit ${GRUB_RC}
 +  architectures:
 +  - ppc64el
 +  types:
@@ -106,6 +146,6 @@ index 81be31e..1429e76 100644
 +    zipl -V -c /etc/zipl.conf
 +  architectures:
 +  - s390x
-   types:
-   - vm
+  types:
+  - vm
 
