@@ -36,7 +36,7 @@ index 81be31e..1429e76 100644
    - packages:
      - shim-signed
      action: install
-@@ -648,6 +666,113 @@ actions:
+@@ -648,6 +666,112 @@ actions:
 
     update-grub
     sed -i "s#root=[^ ]*#root=${DISTROBUILDER_ROOT_UUID}#g" /boot/grub/grub.cfg
