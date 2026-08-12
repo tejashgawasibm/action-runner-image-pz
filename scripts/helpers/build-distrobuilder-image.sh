@@ -381,7 +381,10 @@ build_distrobuilder_ubuntu_image() {
     # Create images directory structure matching the patch's path prefix
     mkdir -p images
     mv ubuntu.yaml images/ubuntu.yaml
-    if ! patch -p1 < "$yaml_patch"; then
+    # Use 'git apply' instead of 'patch' — git apply handles shell variable
+    # syntax (${VAR}) in patch hunks without misinterpreting them as malformed
+    # patch directives, which GNU patch does with lines like "targetbase = ${LOOP_DEV}"
+    if ! git apply --whitespace=nowarn "$yaml_patch"; then
         log_error "Failed to apply lxc-ci patches — patch did not apply cleanly."
         log_error "The patch may be out of sync with the upstream ubuntu.yaml."
         mv images/ubuntu.yaml ubuntu.yaml 2>/dev/null || true
